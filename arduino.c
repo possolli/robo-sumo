@@ -102,7 +102,7 @@ long lerDistanciaCM() {
   digitalWrite(TRIG, LOW); delayMicroseconds(2);
   digitalWrite(TRIG, HIGH); delayMicroseconds(10);
   digitalWrite(TRIG, LOW);
-  long duracao = pulseIn(ECHO, HIGH, 20000); // timeout 20ms
+  long duracao = pulseIn(ECHO, HIGH, 20000);
   return duracao * 0.034 / 2;
 }
 
@@ -119,62 +119,78 @@ void loop() {
   Serial.print(" | BL: "); Serial.print(ir_bl);
   Serial.print(" | Dist: "); Serial.print(distancia); Serial.println("cm");
 
-  // === BORDAS COM PRIORIDADE ABSOLUTA ===
+  // === Casos combinados ===
 
-  if (ir_fr == LOW) {
-    Serial.println("-> IR_FR ATIVADO: RÉ PARA ESQUERDA");
+  if (ir_fr == LOW && ir_fl == LOW) {
+    Serial.println("-> AMBOS SENSORES FRONTAIS: RÉ RETA");
+    while (digitalRead(IR_FR) == LOW || digitalRead(IR_FL) == LOW) {
+      recuar();
+    }
+    parar(); delay(100);
+  }
+  else if (ir_br == LOW && ir_bl == LOW) {
+    Serial.println("-> AMBOS SENSORES TRASEIROS: AVANÇO RETO");
+    while (digitalRead(IR_BR) == LOW || digitalRead(IR_BL) == LOW) {
+      avancar();
+    }
+    parar(); delay(100);
+  }
+
+  // === Reações individuais ===
+
+  else if (ir_fr == LOW) {
+    Serial.println("-> IR_FR: RÉ ESQUERDA");
     while (digitalRead(IR_FR) == LOW) {
       girarReEsquerda();
     }
     parar(); delay(100);
   }
   else if (ir_fl == LOW) {
-    Serial.println("-> IR_FL ATIVADO: RÉ PARA DIREITA");
+    Serial.println("-> IR_FL: RÉ DIREITA");
     while (digitalRead(IR_FL) == LOW) {
       girarReDireita();
     }
     parar(); delay(100);
   }
   else if (ir_br == LOW && distancia < distanciaAlvo) {
-    Serial.println("-> IR_BR + Oponente: RÉ ESQUERDA AGRESSIVA");
+    Serial.println("-> IR_BR + OPONENTE: RÉ ESQUERDA AGRESSIVA");
     while (digitalRead(IR_BR) == LOW) {
       girarReEsquerda();
     }
     parar(); delay(100);
   }
   else if (ir_bl == LOW && distancia < distanciaAlvo) {
-    Serial.println("-> IR_BL + Oponente: RÉ DIREITA AGRESSIVA");
+    Serial.println("-> IR_BL + OPONENTE: RÉ DIREITA AGRESSIVA");
     while (digitalRead(IR_BL) == LOW) {
       girarReDireita();
     }
     parar(); delay(100);
   }
   else if (ir_br == LOW) {
-    Serial.println("-> IR_BR ATIVADO: AVANÇAR VIRANDO PARA ESQUERDA");
+    Serial.println("-> IR_BR: AVANÇA ESQUERDA");
     while (digitalRead(IR_BR) == LOW) {
       avancarEsquerda();
     }
     parar(); delay(100);
   }
   else if (ir_bl == LOW) {
-    Serial.println("-> IR_BL ATIVADO: AVANÇAR VIRANDO PARA DIREITA");
+    Serial.println("-> IR_BL: AVANÇA DIREITA");
     while (digitalRead(IR_BL) == LOW) {
       avancarDireita();
     }
     parar(); delay(100);
   }
 
-  // === MODO DE ATAQUE ===
+  // === Ataque e busca ===
+
   else if (distancia > 0 && distancia < distanciaAlvo) {
     Serial.println("-> OPONENTE DETECTADO: AVANÇANDO");
     avancar();
   }
-
-  // === MODO DE BUSCA ===
   else {
-    Serial.println("-> NENHUM OPONENTE: GIRANDO");
+    Serial.println("-> SEM OPONENTE: GIRANDO");
     girarBuscarOponente();
   }
 
-  delay(100);
+  delay(100);
 }
